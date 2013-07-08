@@ -3,6 +3,7 @@ package com.corista.bioformats.ws;
 import ij.ImagePlus;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -24,6 +25,7 @@ import loci.plugins.in.ImporterOptions;
 public class Image extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final String FILENAME_PARAM_NAME = "filename";
 	private static final String X_COORD_PARAM_NAME = "xCoord";
 	private static final String Y_COORD_PARAM_NAME = "yCoord";
 	private static final String WIDTH_PARAM_NAME = "width";
@@ -34,7 +36,7 @@ public class Image extends HttpServlet {
 	private static final int DEFAULT_WIDTH = 256;
 	private static final int DEFAULT_HEIGHT = 256;
 	
-	private String filePath = "/Users/tmciver/Documents/corista-images/Unsupported/Olympus/GI test01.vsi";
+	private String imageDir = "/Users/tmciver/Documents/corista-images/Unsupported/Olympus";
 	private ImporterOptions options;
        
     /**
@@ -49,11 +51,21 @@ public class Image extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		options = new ImporterOptions();
-		options.setId(filePath);
 		options.setCrop(true);
 		
-		// get URL params or set defaults if they're missing
-		// first, x coordinate
+		// get URL params
+		// filename
+		String filename = request.getParameter(FILENAME_PARAM_NAME);
+		if (filename == null) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
+			return;
+		}
+		
+		// set the options ID (image file name)
+		String imageFile = imageDir + File.separator + filename;
+		options.setId(imageFile);
+		
+		// x coordinate
 		int xCoord = DEFAULT_X_COORD;
 		String xStr = request.getParameter(X_COORD_PARAM_NAME);
 		if (xStr != null) {
