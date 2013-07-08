@@ -23,6 +23,17 @@ import loci.plugins.in.ImporterOptions;
 @WebServlet(description = "Get a tile image for a given slide data file at given tile offsets.", urlPatterns = { "/Tile" })
 public class Tile extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	private static final String X_COORD_PARAM_NAME = "xCoord";
+	private static final String Y_COORD_PARAM_NAME = "yCoord";
+	private static final String WIDTH_PARAM_NAME = "width";
+	private static final String HEIGHT_PARAM_NAME = "height";
+	
+	private static final int DEFAULT_X_COORD = 0;
+	private static final int DEFAULT_Y_COORD = 0;
+	private static final int DEFAULT_WIDTH = 256;
+	private static final int DEFAULT_HEIGHT = 256;
+	
 	private String filePath = "/Users/tmciver/Documents/corista-images/Unsupported/Olympus/GI test01.vsi";
 	private ImporterOptions options;
        
@@ -41,12 +52,57 @@ public class Tile extends HttpServlet {
 		options.setId(filePath);
 		options.setCrop(true);
 		
+		// get URL params or set defaults if they're missing
+		// first, x coordinate
+		int xCoord = DEFAULT_X_COORD;
+		String xStr = request.getParameter(X_COORD_PARAM_NAME);
+		if (xStr != null) {
+			try {
+				xCoord = Integer.parseInt(xStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "xCoord parameter was malformed.");
+				return;
+			}
+		}
+		
+		// y coordinate
+		int yCoord = DEFAULT_Y_COORD;
+		String yStr = request.getParameter(Y_COORD_PARAM_NAME);
+		if (yStr != null) {
+			try {
+				yCoord = Integer.parseInt(yStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "yCoord parameter was malformed.");
+				return;
+			}
+		}
+		
+		// width
+		int width = DEFAULT_WIDTH;
+		String widthStr = request.getParameter(WIDTH_PARAM_NAME);
+		if (widthStr != null) {
+			try {
+				width = Integer.parseInt(widthStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Width parameter was malformed.");
+				return;
+			}
+		}
+		
+		// height
+		int height = DEFAULT_HEIGHT;
+		String heightStr = request.getParameter(HEIGHT_PARAM_NAME);
+		if (heightStr != null) {
+			try {
+				height = Integer.parseInt(heightStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Height parameter was malformed.");
+				return;
+			}
+		}
+		
 		// set a crop region
-		int x = 0;
-		int y = 0;
-		int width = 256;
-		int height = 256;
-		options.setCropRegion(0, new Region(x, y, width, height));
+		options.setCropRegion(0, new Region(xCoord, yCoord, width, height));
 		
 		ImagePlus[] imps = null;
 		try {
