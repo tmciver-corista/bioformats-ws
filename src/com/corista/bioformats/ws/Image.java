@@ -20,8 +20,8 @@ import loci.plugins.in.ImporterOptions;
 /**
  * Servlet implementation class Tile
  */
-@WebServlet(description = "Get a tile image for a given slide data file at given tile offsets.", urlPatterns = { "/Tile" })
-public class Tile extends HttpServlet {
+@WebServlet(description = "Get a tile image for a given slide data file at given tile offsets.", urlPatterns = { "/Image" })
+public class Image extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final String X_COORD_PARAM_NAME = "xCoord";
@@ -40,7 +40,7 @@ public class Tile extends HttpServlet {
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public Tile() {
+    public Image() {
         
     }
 
