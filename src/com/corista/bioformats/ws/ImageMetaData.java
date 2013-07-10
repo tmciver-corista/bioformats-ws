@@ -2,6 +2,8 @@ package com.corista.bioformats.ws;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,15 +22,25 @@ import loci.formats.ImageReader;
 public class ImageMetaData extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final String BASE_DIR_PROPERTY_NAME = "basedir";
 	private static final String FILENAME_PARAM_NAME = "filename";
-	
-	private String imageDir = "/Users/tmciver/Documents/corista-images/Unsupported/Olympus";
+
+	private String imageDir;
        
     /**
+     * @throws IOException 
      * @see HttpServlet#HttpServlet()
      */
-    public ImageMetaData() {
-        super();
+    public ImageMetaData() throws IOException {
+        
+    	// initialize imageDir from a properties file
+    	InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("bioformats-ws.properties");
+    	Properties props = new Properties();
+    	props.load(stream);
+    	imageDir = props.getProperty(BASE_DIR_PROPERTY_NAME);
+    	if (imageDir == null) {
+    		throw new IOException("Could not load property '" + BASE_DIR_PROPERTY_NAME + "'.");
+    	}
     }
 
 	/**
@@ -38,7 +50,7 @@ public class ImageMetaData extends HttpServlet {
 		
 		// get filename URL param
 		String filename = request.getParameter(FILENAME_PARAM_NAME);
-		if (filename == null) {
+		if (filename == null || filename.isEmpty()) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
 			return;
 		}

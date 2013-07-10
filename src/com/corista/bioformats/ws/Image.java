@@ -5,6 +5,8 @@ import ij.ImagePlus;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
@@ -25,6 +27,7 @@ import loci.plugins.in.ImporterOptions;
 public class Image extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final String BASE_DIR_PROPERTY_NAME = "basedir";
 	private static final String FILENAME_PARAM_NAME = "filename";
 	private static final String X_COORD_PARAM_NAME = "xCoord";
 	private static final String Y_COORD_PARAM_NAME = "yCoord";
@@ -36,14 +39,23 @@ public class Image extends HttpServlet {
 	private static final int DEFAULT_WIDTH = 256;
 	private static final int DEFAULT_HEIGHT = 256;
 	
-	private String imageDir = "/Users/tmciver/Documents/corista-images/Unsupported/Olympus";
+	private String imageDir;
 	private ImporterOptions options;
        
     /**
+     * @throws IOException 
      * @see HttpServlet#HttpServlet()
      */
-    public Image() {
+    public Image() throws IOException {
         
+    	// initialize imageDir from a properties file
+    	InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("bioformats-ws.properties");
+    	Properties props = new Properties();
+    	props.load(stream);
+    	imageDir = props.getProperty(BASE_DIR_PROPERTY_NAME);
+    	if (imageDir == null) {
+    		throw new IOException("Could not load property '" + BASE_DIR_PROPERTY_NAME + "'.");
+    	}
     }
 
 	/**
@@ -56,7 +68,7 @@ public class Image extends HttpServlet {
 		// get URL params
 		// filename
 		String filename = request.getParameter(FILENAME_PARAM_NAME);
-		if (filename == null) {
+		if (filename == null || filename.isEmpty()) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
 			return;
 		}
@@ -76,6 +88,10 @@ public class Image extends HttpServlet {
 				return;
 			}
 		}
+		if (xCoord < 0) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "xCoord parameter cannot be negative.");
+			return;
+		}
 		
 		// y coordinate
 		int yCoord = DEFAULT_Y_COORD;
@@ -87,6 +103,10 @@ public class Image extends HttpServlet {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "yCoord parameter was malformed.");
 				return;
 			}
+		}
+		if (yCoord < 0) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "yCoord parameter cannot be negative.");
+			return;
 		}
 		
 		// width
