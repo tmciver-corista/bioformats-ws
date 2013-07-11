@@ -33,6 +33,7 @@ public class Image extends HttpServlet {
 	private static final String Y_COORD_PARAM_NAME = "yCoord";
 	private static final String WIDTH_PARAM_NAME = "width";
 	private static final String HEIGHT_PARAM_NAME = "height";
+	private static final String MEDIA_TYPE_PARAM_NAME = "type";
 	
 	private static final int DEFAULT_X_COORD = 0;
 	private static final int DEFAULT_Y_COORD = 0;
@@ -64,6 +65,7 @@ public class Image extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		options = new ImporterOptions();
 		options.setCrop(true);
+		options.setAutoscale(false);
 		
 		// get URL params
 		// filename
@@ -133,6 +135,17 @@ public class Image extends HttpServlet {
 			}
 		}
 		
+		// type
+		String type = request.getParameter(MEDIA_TYPE_PARAM_NAME);
+		if (type == null || type.equals("bmp")) {
+			type = "image/bmp";
+		} else if (type.equals("jpg")) {
+			type = "image/jpeg";
+		} else {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid type parameter value.");
+			return;
+		}
+		
 		// set a crop region
 		options.setCropRegion(0, new Region(xCoord, yCoord, width, height));
 		
@@ -154,11 +167,16 @@ public class Image extends HttpServlet {
 		// get the image
 		BufferedImage image = (BufferedImage)imps[0].getImage();
 		
-		// write jpg to output stream
-		ImageIO.write(image, "jpg", response.getOutputStream());
-		
-		// set content type
-		response.setContentType("image/jpeg");
+		// write image to output stream
+		if (type.equals("image/jpeg")) {
+			ImageIO.write(image, "jpg", response.getOutputStream());
+			response.setContentType("image/jpeg");
+		} else if (type.equals("image/bmp")) {
+			ImageIO.write(image, "bmp", response.getOutputStream());
+			response.setContentType("image/bmp");
+		} else {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server tried to process an invalid type argument.");
+			return;
+		}
 	}
-
 }
