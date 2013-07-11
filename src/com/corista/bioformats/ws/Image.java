@@ -122,6 +122,10 @@ public class Image extends HttpServlet {
 				return;
 			}
 		}
+		if (width < 0) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "width parameter cannot be negative.");
+			return;
+		}
 		
 		// height
 		int height = DEFAULT_HEIGHT;
@@ -133,6 +137,10 @@ public class Image extends HttpServlet {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Height parameter was malformed.");
 				return;
 			}
+		}
+		if (height < 0) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "height parameter cannot be negative.");
+			return;
 		}
 		
 		// type
