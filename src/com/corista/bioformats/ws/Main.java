@@ -66,7 +66,9 @@ public class Main extends HttpServlet {
 			sb.append(file.getName());
 			sb.append("\">");
 			sb.append(file.getName());
-			sb.append("</a></li>");
+			sb.append("</a> (<a href=\"/bioformats-ws/ImageMetaData?filename=");
+			sb.append(file.getName());
+			sb.append("\">Meta</a>)</li>");
 		}
 		
 		sb.append("</ul></body></html>");
