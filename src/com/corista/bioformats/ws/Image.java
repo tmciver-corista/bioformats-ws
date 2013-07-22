@@ -161,15 +161,16 @@ public class Image extends HttpServlet {
 		try {
 			imps = BF.openImagePlus(options);
 		} catch (FormatException fe) {
-			System.err.println("Caught FormatException");
-			throw new IOException(fe);
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Received a FormatException from BioFormats library.");
+			return;
 		} catch (IOException ioe) {
-			System.err.println("Caught IOException");
-			throw ioe;
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Received an IOException from BioFormats library.");
+			return;
 		}
 		
 		if (imps.length < 1) {
-			throw new IOException("Could not read image data.");
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "There was no image data received from BioFormats library.");
+			return;
 		}
 		
 		// get the image
