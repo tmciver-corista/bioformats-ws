@@ -3,6 +3,12 @@
     <wb-module deploy-name="bioformats-ws">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <dependent-module archiveName="ij.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//Users/tmciver/Documents/workspace/BioFormatsTest/lib/ij.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="loci_tools.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib//Users/tmciver/Documents/workspace/BioFormatsTest/lib/loci_tools.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="bioformats-ws"/>
         <property name="java-output-path" value="/bioformats-ws/build/classes"/>
     </wb-module>
