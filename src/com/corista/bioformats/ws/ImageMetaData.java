@@ -24,6 +24,9 @@ public class ImageMetaData extends HttpServlet {
 	
 	private static final String BASE_DIR_PROPERTY_NAME = "basedir";
 	private static final String FILENAME_PARAM_NAME = "filename";
+	private static final String SERIES_PARAM_NAME = "series";
+	
+	private static final int DEFAULT_SERIES = 0;
 
 	private String imageDir;
        
@@ -54,10 +57,22 @@ public class ImageMetaData extends HttpServlet {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
 			return;
 		}
+		
+		// get the series param
+		String seriesStr = request.getParameter(SERIES_PARAM_NAME);
+		int series = DEFAULT_SERIES;
+		if (seriesStr != null) {
+			try {
+				series = Integer.parseInt(seriesStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, SERIES_PARAM_NAME + " parameter was malformed.");
+				return;
+			}
+		}
 
-	    // create format reader
+		// create format reader
 	    IFormatReader reader = new ImageReader();
-	    
+
 	    // set the ID (image file name)
 	    String imageFile = imageDir + File.separator + filename;
 	    try {
@@ -67,7 +82,18 @@ public class ImageMetaData extends HttpServlet {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
 			return;
 		}
-
+	    
+	    // validate series value
+	    int maxSeries = reader.getSeriesCount();
+	    if (series >= maxSeries ||
+	    		series < 0) {
+	    	reader.close();
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Requested series is out of range. Must be 0 <= " + SERIES_PARAM_NAME + " < " + maxSeries);
+			return;
+	    }
+	    
+	    reader.setSeries(series);
+	    
 	    // get the width and height
 	    int width = reader.getSizeX();
 	    int height = reader.getSizeY();
