@@ -37,11 +37,13 @@ public class Image extends HttpServlet {
 	private static final String WIDTH_PARAM_NAME = "width";
 	private static final String HEIGHT_PARAM_NAME = "height";
 	private static final String MEDIA_TYPE_PARAM_NAME = "type";
+	private static final String SERIES_PARAM_NAME = "series";
 	
 	private static final int DEFAULT_X_COORD = 0;
 	private static final int DEFAULT_Y_COORD = 0;
 	private static final int DEFAULT_WIDTH = 256;
 	private static final int DEFAULT_HEIGHT = 256;
+	private static final int DEFAULT_SERIES = 0;
 	
 	private String imageDir;
 	private Map<String, ReaderAndOptions> readerAndOptionsCache = new HashMap<String, ReaderAndOptions>();
@@ -109,6 +111,18 @@ public class Image extends HttpServlet {
 		if (filename == null || filename.isEmpty()) {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
 			return;
+		}
+		
+		// get the series param
+		String seriesStr = request.getParameter(SERIES_PARAM_NAME);
+		int series = DEFAULT_SERIES;
+		if (seriesStr != null) {
+			try {
+				series = Integer.parseInt(seriesStr);
+			} catch (NumberFormatException nfe) {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, SERIES_PARAM_NAME + " parameter was malformed.");
+				return;
+			}
 		}
 
 		// x coordinate
@@ -191,7 +205,13 @@ public class Image extends HttpServlet {
 		ReaderAndOptions readerAndOptions = getReaderAndOptions(imageFile);
 
 		// set a crop region
-		readerAndOptions.options.setCropRegion(0, new Region(xCoord, yCoord, width, height));
+		readerAndOptions.options.setCropRegion(series, new Region(xCoord, yCoord, width, height));
+		
+		// set the series
+		for (int i = 0; i < series; i++) {
+			readerAndOptions.options.setSeriesOn(i, false);
+		}
+		readerAndOptions.options.setSeriesOn(series, true);
 		
 		ImagePlus[] imps = null;
 		try {
