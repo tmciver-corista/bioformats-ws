@@ -6,6 +6,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.imageio.ImageIO;
@@ -17,7 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import loci.common.Region;
 import loci.formats.FormatException;
-import loci.plugins.BF;
+import loci.plugins.in.ImagePlusReader;
+import loci.plugins.in.ImportProcess;
 import loci.plugins.in.ImporterOptions;
 
 /**
@@ -41,7 +44,7 @@ public class Image extends HttpServlet {
 	private static final int DEFAULT_HEIGHT = 256;
 	
 	private String imageDir;
-	private ImporterOptions options;
+	private Map<String, ReaderAndOptions> readerAndOptionsCache = new HashMap<String, ReaderAndOptions>();
        
     /**
      * @throws IOException 
@@ -58,15 +61,48 @@ public class Image extends HttpServlet {
     		throw new IOException("Could not load property '" + BASE_DIR_PROPERTY_NAME + "'.");
     	}
     }
+    
+    private ReaderAndOptions getReaderAndOptions(String filepath) throws IOException {
+    	
+    	// see if there's one in the cache
+    	ReaderAndOptions readerAndOptions = readerAndOptionsCache.get(filepath);
+    	if (readerAndOptions != null) {
+    		return readerAndOptions;
+    	}
+    	
+    	// there wasn't one cached; create an ImportOptions object
+    	ImporterOptions options = new ImporterOptions();
+    	options.setId(filepath);
+		options.setCrop(true);
+		options.setAutoscale(false);
+		
+		// create the ImportProcess object
+		ImportProcess process = new ImportProcess(options);
+		try {
+			if (!process.execute()) {
+				throw new IOException("Error executing ImportProcess.process().");
+			}
+		} catch (FormatException e) {
+			throw new IOException(e);
+		}
+		
+		// create the ImagePlusReader
+		ImagePlusReader reader = new ImagePlusReader(process);
+		
+		// create the ReaderAndOptions object
+		readerAndOptions = new ReaderAndOptions(reader, options);
+		
+		// add it to the cache
+		readerAndOptionsCache.put(filepath, readerAndOptions);
+		
+		return readerAndOptions;
+    }
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		options = new ImporterOptions();
-		options.setCrop(true);
-		options.setAutoscale(false);
-		
+
 		// get URL params
 		// filename
 		String filename = request.getParameter(FILENAME_PARAM_NAME);
@@ -74,11 +110,7 @@ public class Image extends HttpServlet {
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "You must supply a filename parameter value.");
 			return;
 		}
-		
-		// set the options ID (image file name)
-		String imageFile = imageDir + File.separator + filename;
-		options.setId(imageFile);
-		
+
 		// x coordinate
 		int xCoord = DEFAULT_X_COORD;
 		String xStr = request.getParameter(X_COORD_PARAM_NAME);
@@ -154,12 +186,16 @@ public class Image extends HttpServlet {
 			return;
 		}
 		
+		// get the ImagePlusReader and ImportOptions objects
+		String imageFile = imageDir + File.separator + filename;
+		ReaderAndOptions readerAndOptions = getReaderAndOptions(imageFile);
+
 		// set a crop region
-		options.setCropRegion(0, new Region(xCoord, yCoord, width, height));
+		readerAndOptions.options.setCropRegion(0, new Region(xCoord, yCoord, width, height));
 		
 		ImagePlus[] imps = null;
 		try {
-			imps = BF.openImagePlus(options);
+			imps = readerAndOptions.reader.openImagePlus();
 		} catch (FormatException fe) {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Received a FormatException from BioFormats library.");
 			return;
@@ -187,5 +223,16 @@ public class Image extends HttpServlet {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server tried to process an invalid type argument.");
 			return;
 		}
+	}
+}
+
+class ReaderAndOptions {
+	
+	public ImagePlusReader reader;
+	public ImporterOptions options;
+	
+	public ReaderAndOptions(ImagePlusReader reader, ImporterOptions options) {
+		this.reader = reader;
+		this.options = options;
 	}
 }
